@@ -1,0 +1,51 @@
+########
+# Copyright (c) 2014 GigaSpaces Technologies Ltd. All rights reserved
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+#    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    * See the License for the specific language governing permissions and
+#    * limitations under the License.
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+BASE_BOX_NAME = 'ubuntu/trusty64'
+
+Vagrant.configure('2') do |config|
+
+  config.vm.define :es do |es|
+    es.vm.provider :virtualbox do |vb|
+      vb.customize ['modifyvm', :id, '--memory', '1024']
+      vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    end
+    es.vm.box = BASE_BOX_NAME
+    es.vm.hostname = 'es'
+    es.vm.network :private_network, ip: '10.2.2.8'
+    es.vm.network "forwarded_port", :guest => 5601, :host => 8080
+    es.vm.provision "shell" do |s|
+      s.path = "provision_es.sh"
+      s.privileged = false
+    end
+  end
+
+  config.vm.define :ls do |ls|
+    ls.vm.provider :virtualbox do |vb|
+      vb.customize ['modifyvm', :id, '--memory', '1024']
+      vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    end
+    ls.vm.box = BASE_BOX_NAME
+    ls.vm.hostname = 'ls'
+    ls.vm.network :private_network, ip: '10.2.2.9'
+    ls.vm.provision "shell" do |s|
+      s.path = "provision_ls.sh"
+      s.privileged = false
+    end
+  end
+end
