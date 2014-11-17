@@ -1,0 +1,66 @@
+{
+  "variables": {
+    "base_box_path": "/home/{{env `MY_VAGRANT_USER`}}/.vagrant.d/boxes/ubuntu-VAGRANTSLASH-trusty64/0/virtualbox/box.ovf",
+    "ssh_key_path": "/home/{{env `MY_VAGRANT_USER`}}/.vagrant.d/insecure_private_key"
+  },
+  "builders": [
+    {
+      "name": "logstash_box",
+      "type": "virtualbox-ovf",
+      "source_path": "{{user `base_box_path`}}",
+      "vm_name": "ls",
+      "ssh_username": "vagrant",
+      "ssh_key_path": "{{user `ssh_key_path`}}",
+      "ssh_wait_timeout": "3m",
+      "shutdown_command": "echo 'packer' | sudo -S shutdown -P now",
+      "vboxmanage": [
+        ["modifyvm", "{{.Name}}", "--memory", "1024"],
+        ["modifyvm", "{{.Name}}", "--cpus", "1"],
+        ["modifyvm", "{{.Name}}", "--natdnshostresolver1", "on"]
+      ],
+      "headless": true
+    },
+    {
+      "name": "elasticsearch_box",
+      "type": "virtualbox-ovf",
+      "source_path": "{{user `base_box_path`}}",
+      "vm_name": "es",
+      "ssh_username": "vagrant",
+      "ssh_key_path": "{{user `ssh_key_path`}}",
+      "ssh_wait_timeout": "3m",
+      "shutdown_command": "echo 'packer' | sudo -S shutdown -P now",
+      "vboxmanage": [
+        ["modifyvm", "{{.Name}}", "--memory", "1024"],
+        ["modifyvm", "{{.Name}}", "--cpus", "1"],
+        ["modifyvm", "{{.Name}}", "--natdnshostresolver1", "on"]
+      ],
+      "headless": true
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "only": ["elasticsearch_box"],
+      "script": "provision_es.sh"
+    },
+    {
+      "type": "shell",
+      "only": ["logstash_box"],
+      "script": "provision_ls.sh"
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "vagrant",
+      "only": ["elasticsearch_box"],
+      "compression_level": 9,
+      "output": "elasticsearch_{{.Provider}}.box"
+    },
+    {
+      "type": "vagrant",
+      "only": ["logstash_box"],
+      "compression_level": 9,
+      "output": "logstash_{{.Provider}}.box"
+    }
+  ]
+}
